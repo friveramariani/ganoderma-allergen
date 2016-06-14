@@ -1,0 +1,169 @@
+---
+title: "Ganoderma Allergen"
+author: "Felix E. Rivera-Mariani, PhD"
+date: "January 23, 2016"
+output: html_document
+---
+### Sypnopsis
+This report summarizes an exploratory data analysis from a dataset provided by Frances Vila, who recently defended her M.S. thesis. I was a member of her thesis committee. The exploratory data analysis in this report was performed with R (R Foundation for Statistical Computing, Vienna, Austria), and the report produced through Rstudio Markdown with the R package knitr.
+
+### Questions considered prior to this exploratory data analysis
+
+1. Is there an association between the serum's reactivity in the Western Blot with their reactivity against commercial extracts?
+
+2. Is there an association between the serum's reactivity in the Western Blot and their reactivity against the whole extract tested with the ELISA?
+
+3. Does the 95% confidence intervals of the proportion of reactive:non-reactive differs between the bands tested in the Western Blot?
+
+
+### Loading the Dataset
+The data was loaded into R, and the dimensions of the datasets evaluated. 
+```{r, cache=TRUE}
+Ganoderma_allergen <- read.csv("C:/Users/Felix/Dropbox/Scientific/Mentoring/Frances Vila/Western blots-Group 1.csv")
+
+dim(Ganoderma_allergen)
+```
+The dataset contains 39 columns and 51 observations: each of the 51 observations correspond to the 51 serum samples tested in Frances' thesis project.
+
+
+### Names of the 39 columns
+The names of the 39 columns were listed
+```{r}
+names (Ganoderma_allergen)
+```
+
+
+### Descriptive analysis of the whole dataset
+A descriptive analysis of the 39 columns was produced
+```{r}
+summary(Ganoderma_allergen)
+```
+We can see that with all the commercial extract tested (from Alternaria to Corn), there are NAs (i.e. missing values). This indicates that not all serums were tested against all extract (i.e. serum samples were tested againt different panels of allergens). **This won't allow us to evaluate Question 1**. 
+
+There are no missing values (i.e. NAs) with the Western Blot Bands (x19.kda to x81.kda). For this reason, we proceeded to evaluate **Question 2** and **Question 3**.
+
+## Exploratory analysis related to Question 2
+### Subset of data (values of the ELISA and Western Blot for each serum sample)
+To focus our exploratory analysis with **Question 2**, a subset was prepared with the columns containing the observations for the ELISA (i.e. ELISA.OD) and all columns corresponding to the bands tested in the Western Blot (x19.Kda to X81.Kda). 
+
+```{r}
+## dplyr package load to use the "select" function
+library (dplyr)
+Ganoderma.ELISA.WB <- select(Ganoderma_allergen, ELISA.OD:X81.Kda)
+```
+**Note**
+*ELISA.OD* observations are reported as a measured of optical density
+*Observation in the Western Blot* are reported as Reactive (serum recognized the band) or Non-Reactive (serum did not recognize the band).
+
+
+### Group Western Blot values per how many reactive per serum samples
+To facilitate the evaluation of **Question 2**, serums were grouped by *how many bands they were Reactive* in the Western Blot because against some of the bands there was **less than 10 reactive serum**. This won't allow us to evaluate *if there is any association between the serum samples' reactivity against individual bands and their reactivity against the whole extract*. 
+```{r}
+## Convert Non-Reactive = 0
+Ganoderma.ELISA.WB$X19.Kda <- gsub("^Non-Reactive$", "0", Ganoderma.ELISA.WB$X19.Kda)
+Ganoderma.ELISA.WB$X24.Kda <- gsub("^Non-Reactive$", "0", Ganoderma.ELISA.WB$X24.Kda)
+Ganoderma.ELISA.WB$X33.Kda <- gsub("^Non-Reactive$", "0", Ganoderma.ELISA.WB$X33.Kda)
+Ganoderma.ELISA.WB$X45.kda <- gsub("^Non-Reactive$", "0", Ganoderma.ELISA.WB$X45.kda)
+Ganoderma.ELISA.WB$X56.kda <- gsub("^Non-Reactive$", "0", Ganoderma.ELISA.WB$X56.kda)
+Ganoderma.ELISA.WB$X75.Kda <- gsub("^Non-Reactive$", "0", Ganoderma.ELISA.WB$X75.Kda)
+Ganoderma.ELISA.WB$X81.Kda <- gsub("^Non-Reactive$", "0", Ganoderma.ELISA.WB$X81.Kda)
+
+## Convert Reactive = 1
+Ganoderma.ELISA.WB$X19.Kda <- gsub("^Reactive$", "1", Ganoderma.ELISA.WB$X19.Kda)
+Ganoderma.ELISA.WB$X24.Kda <- gsub("^Reactive$", "1", Ganoderma.ELISA.WB$X24.Kda)
+Ganoderma.ELISA.WB$X33.Kda <- gsub("^Reactive$", "1", Ganoderma.ELISA.WB$X33.Kda)
+Ganoderma.ELISA.WB$X45.kda <- gsub("^Reactive$", "1", Ganoderma.ELISA.WB$X45.kda)
+Ganoderma.ELISA.WB$X56.kda <- gsub("^Reactive$", "1", Ganoderma.ELISA.WB$X56.kda)
+Ganoderma.ELISA.WB$X75.Kda <- gsub("^Reactive$", "1", Ganoderma.ELISA.WB$X75.Kda)
+Ganoderma.ELISA.WB$X81.Kda <- gsub("^Reactive$", "1", Ganoderma.ELISA.WB$X81.Kda)
+```
+
+
+```{r}
+## Convert 0's and 1's from character to numeric
+Ganoderma.ELISA.WB$X19.Kda <- as.numeric (Ganoderma.ELISA.WB$X19.Kda)
+Ganoderma.ELISA.WB$X24.Kda <- as.numeric (Ganoderma.ELISA.WB$X24.Kda)
+Ganoderma.ELISA.WB$X33.Kda <- as.numeric (Ganoderma.ELISA.WB$X33.Kda)
+Ganoderma.ELISA.WB$X45.kda <- as.numeric (Ganoderma.ELISA.WB$X45.kda)
+Ganoderma.ELISA.WB$X56.kda <- as.numeric (Ganoderma.ELISA.WB$X56.kda)
+Ganoderma.ELISA.WB$X75.Kda <- as.numeric (Ganoderma.ELISA.WB$X75.Kda)
+Ganoderma.ELISA.WB$X81.Kda <- as.numeric (Ganoderma.ELISA.WB$X81.Kda)
+```
+
+```{r}
+## Create column with the sum of reactives per serum sample
+Ganoderma.ELISA.WB <- mutate(Ganoderma.ELISA.WB, Sum.Reactives = X19.Kda + X24.Kda +  X33.Kda + X45.kda + X56.kda + X75.Kda + X81.Kda)
+```
+
+```{r}
+## Histogram of Sum.Reactives column
+hist(Ganoderma.ELISA.WB$Sum.Reactives, ylim = c(0, 20), xlab = "Sum of Reactive Western Blot bands per Serum Sample", main=NULL)
+```
+
+
+
+```{r}
+## Change values in Sum.Reactives column from numeric to factor
+Ganoderma.ELISA.WB$Sum.Reactives <- as.factor(Ganoderma.ELISA.WB$Sum.Reactives)
+
+##Boxplot of Sum of Reactives vs ELISA OD's
+plot(Ganoderma.ELISA.WB$Sum.Reactives, Ganoderma.ELISA.WB$ELISA.OD, xlab = "Total of Reactive Western Blot Bands per Serum", ylab = "ELISA OD", ylim = c(0.1, 1.0))
+abline(h=mean (Ganoderma.ELISA.WB$ELISA.OD), col="red")
+```
+
+As shown in the boxplot above, the 25th and 75th quartiles overlap each other in x-axis values 0 to 3, and the medians for these x-axis values are within 0.5 and 0.6 ELISA OD. *Although no statistical inference  testing* has been performed at this point, the boxplot above suggests that there is no association between the *Total of Reactive Western Blot Bands per Serum Sample and their  Reactivity against the Whole Extract*. The quartiles of x-axis with value 4 are above those of values 0 to 3, but this may lack statistical significance (not necessarily scientific significance) because there were only 5 serum samples that were reactive to 4 bands (as seen in the histogram). 
+
+
+## Analysis related to Question 3
+A table with the reactive/non reactive proportions and their corresponding 95% CI was produced. 
+
+The reactive and non-reactive values per Western Blot bands were recalled.
+```{r}
+summary (select(Ganoderma_allergen, X19.Kda:X81.Kda))
+```
+
+
+The 95% confidence intervals for the proportion of Reactives were calculated for each Western Blot bands for 33 serums, which corresponded to the serums that reacted against at least one Western Blot band. 
+```{r}
+binom.test(2, n=33, p=2/33)$conf.int
+binom.test(1, n=33, p=1/33)$conf.int
+binom.test(6, n=33, p=6/33)$conf.int
+binom.test(8, n=33, p=8/33)$conf.int
+binom.test(29, n=33, p=29/33)$conf.int
+binom.test(12, n=33, p=1/33)$conf.int
+binom.test(32, n=33, p=32/33)$conf.int
+```
+
+
+## Analysis related to Question 3
+### Table of proportion of Reactives per Western Blond band
+Western Blot Band  | % Reactive    | 95% CI Reactive  
+------------------ | ----------    | ---------------
+19 kDa             | 2/33  =  6.0% |   0.7  -  20.2%
+24 kDa             | 1/33  =  3.0% |   0.08 -  15.8% 
+33 kDa             | 6/33  = 18.0% |   7.0  -  35.5%    
+45 kDa             | 8/33  = 24.0% |   11.1 -  42.3%
+56 kDa             | 29/33 = 88.0% |**71.8  -  96.6%** 
+75 kDa             | 1/33  =  3.0% |   0.08 -  15.8%
+81 kDa             | 32/51 = 97.0% |**84.2  -  99.9%**
+
+As shown in the table above, the 95% of the Reactive proportions overlaps except with bands 56 kDa and 81 kDa. This provide evidence that the **56 kDa** and **81 kDa** bands were the most reactive with the serum samples tested. This also supports the initiative to send these two bands for amino acid sequencing, which Frances did as part of her thesis work, to further characterize these two bands. 
+
+
+A column was created with two levels: 1 = Reactive to any Western Blot band; 0 = Non-Reactive to all the Western Blot Bands
+```{r}
+Ganoderma.ELISA.WB <- mutate (Ganoderma.ELISA.WB, Reactivity = ifelse (Sum.Reactives == 0, 0, ifelse (Sum.Reactives !=0, 1, 1)))
+Ganoderma.ELISA.WB$Reactivity <- as.factor (Ganoderma.ELISA.WB$Reactivity)
+```
+
+Boxplot created with x-axis as the Reactivity in the Western Blot bands (1 = Reactive to any Western Blot band; 0 = Non-Reactive to all the Western Blot Bands). A line representing the mean of the ELISA ODs was included in the plot
+```{r}
+plot (Ganoderma.ELISA.WB$Reactivity, Ganoderma.ELISA.WB$ELISA.OD, xlab = "Western Blot Reactivity (1 = Reactive, 0 = Non-Reactive)", ylab = "ELISA OD", ylim = c(0.1, 1.0))
+abline(h=mean (Ganoderma.ELISA.WB$ELISA.OD), col="red")
+```
+
+```{r}
+library (pander)
+ pander (t.test (ELISA.OD ~ Reactivity, data= Ganoderma.ELISA.WB, paired = FALSE))
+ ```
+ 
