@@ -1,0 +1,90 @@
+---
+title: Serological Reactivity to the Crude Extract between Individuals with Different
+  Allergenic Profiles
+author: 'Prof: Felix E. Rivera-Mariani, PhD'
+date: "June 14, 2016"
+output: html_document
+---
+
+
+### Questions
+##### 1. Is there a difference in reactivity to the crude extracts between group 1, 2, and 3
+
+```{r, load dataset}
+# load dataset
+library(xlsx)
+elisaGano <- read.xlsx("C:/Users/Felix/Dropbox/Scientific/Mentoring/Frances Vila/Datos crudos ELISA.xlsx", 1)
+```
+
+The dataset was previously reviewed in Excel, and noticed that the names of the variables have spaces, and some variables were duplicated. For this reason, the data cleaning codes are listed below. 
+```{r, data cleaning, message=FALSE, warning=FALSE}
+# Data cleaning
+## remove spaces from columns's names
+names(elisaGano) <- make.names(names(elisaGano))
+
+## eliminate any duplicated columns
+elisaGano <- elisaGano[, !duplicated(colnames(elisaGano))]
+
+## rename and select columns
+library (dplyr)
+elisaGanoGroups <- rename(elisaGano, Group1 = Grupo.1..n.51., Group2 = Grupo.2..n.14., Group3 = Grupo.3..n.22.)
+elisaGanoGroups1 <- select (elisaGanoGroups, Group1, Group2, Group3)
+
+## tidy the dataset
+library(tidyr)
+elisaGanoGroups_long <- gather(elisaGanoGroups1, Groups, ELISAOD, Group1:Group3)
+```
+
+After cleaning the dataset, exploratory analysis was performed to make sure there are no errors in the dataset and to evaluate value distributions for each of the three groups. 
+```{r, message=FALSE}
+# Exploratory data analysis
+## descriptive statistics of the ELISA.OD for each group
+library (pander)
+pander(summary (elisaGanoGroups1))
+
+## histograms to evalaute the distribution of ELISA ODs by group
+par(mfrow=c(3, 1))
+hist (elisaGanoGroups1$Group1)
+hist (elisaGanoGroups1$Group2)
+hist (elisaGanoGroups1$Group3)
+```
+
+From the summary statistics above, Group 1 has the both the highest mean and median for the ELISA ODs, and Group 3 has the lowest mean and median. Given that for all three groups the mean and median are not far apart, it could be hypothesized that there is a normal distribution for all three groups. This hypothesis is further supported by the distribution of values in the three histograms above, where the lowest values are mainly at the right and left regions of the histograms. Nevertheless, to confirm this normal distribution hypothesis, a Shapiro Wilks was performed. 
+```{r}
+#### test for normality for each group
+shapiro.test(elisaGanoGroups$Group1)
+shapiro.test(elisaGanoGroups$Group2)
+shapiro.test(elisaGanoGroups$Group3)
+```
+
+After testing for normal distribution, it is confirmed that the distribution of the ELISA ODs for all three groups is normally distributed. To compare the visually compare the distributions of the three groups, a boxplot was constructed, and including the mean within each group.
+```{r}
+#### boxplot of ELISA ODs per group
+library(ggplot2)
+elisaplot <- ggplot(elisaGanoGroups_long, aes(x=Groups, y=ELISAOD)) + geom_boxplot() + stat_summary(fun.y=mean, geom="point", shape=4, size=4) + guides(fill=FALSE) + theme(axis.title.x = element_blank()) + labs(y=expression (ELISA [A490]))
+
+print(elisaplot)
+```
+
+It can be observed that the boxplots for all three groups show evenly distribution values across each group. More importantly, we can we what we expected from the initial summary statistics analysis, in which the mean and median was highest for Group 1, and lowest for Group 3. Furthermore, it appears that 50% of the values in group 1 are higher than 75% of the values in group 3. This is not the case when comparing group 1 vs group 2. For further evaluate statistical difference, a pairwise distribution was performed with Bonferroni correction.
+```{r}
+# Inferential statistical analysis
+## pairwise t-test with Bonferroni correction
+attach(elisaGanoGroups_long)
+pairwise.t.test(ELISAOD, Groups, p.adj = "bonf")
+detach()
+```
+
+As we expected from the visual comparison from the boxplot above, the mean of Group 1 is statistically significantly higher **(*p* = 0.034)** than the mean from group 3. Although group 2 also had a higher mean and median, as seen earlier in this report, there was no statistical significance in this difference. Nevertheless, it is important to note that the mean and median from group 2 were 19% and 15% higher, respectively, than group 3. This is contrary to the difference between group 1 and group 2, in which the mean and median were just 3% and 8% higher, respectively, than the group 2. 
+
+
+
+
+
+
+
+
+
+
+
+
